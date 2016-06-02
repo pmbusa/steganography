@@ -12,21 +12,24 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import static spark.Spark.*;
 
 import spark.ModelAndView;
+import spark.Response;
 import spark.template.freemarker.FreeMarkerEngine;
 
 /**
  * This contains all of the functions necessary for running the webserver. It also specifies all of the pages that
- * can be accessed. The default port is 4567. Sites to look at:
+ * can be accessed. The default port is 4567. Save both the images from the index page to the same folder as the
+ * decoder .jar file and run it. Both images will be in png format and require the full file name.
+ *
+ * Sites to look at:
  * <p>
- * 127.0.0.1:4567/index     This leads a random page with a bunch of stuff I was experimenting with, particularly
- * dynamic images.
+ * 127.0.0.1:4567/index     This is the main page with both an unmodified and modified image. Start here.
  * <p>
- * 127.0.0.1:4567/stega     The result of the project is here. This contains a dynamically generated image with a
+ * 127.0.0.1:4567/stega     The raw result of the project is here. This contains a dynamically generated image with a
  * hidden IP address in it. If this image is saved as a PNG (jpegs are lossy), one can run
  * it through the included decoder to determine what the address the host who saved the file
  * is.
  * <p>
- * The images are located in /Proxy/srd/main/resources
+ * The images are located in /Proxy/src/main/resources
  * The templates for freemarker are located in /Proxy/src/main/resources/spark/template/freemarker
  */
 public class webServer {
@@ -90,21 +93,27 @@ public class webServer {
 
             map.put("adjective", "super sweet");
 
-            String dog = "Siberian_Husky.jpg";
-            map.put("dog", dog);
+            String husky = "Husky.jpg";
+            map.put("husky", husky);
 
-            File dogFile = new File(filepath + dog);
+            String dogs = "dogs.jpg";
+            map.put("dogs", "./dogs");
+            System.out.println(dogs);
+
+            File dogFile = new File(filepath + dogs);
             BufferedImage img = ImageIO.read(dogFile);
             int height = img.getHeight();
             int width = img.getWidth();
 
 
+
+            /* This code is no longer used but it shows how to convert an image to base 64 and embed that in a page
             // Dynamically modified masterchief picture
             String mc = imgToBase64(filepath + "mc.jpg");
             System.out.println("This was produced by the base64 conversion:");
             System.out.println(mc);
             map.put("mc", mc);
-
+            */
 
             return new ModelAndView(map, "index.html");
         }, new FreeMarkerEngine());
@@ -161,7 +170,7 @@ public class webServer {
             response.raw().setContentType("image/png");
 
             // Open the Buffered Image to allow modification of it's contents
-            File inputImageFile = new File(filepath + "mc.jpg");
+            File inputImageFile = new File(filepath + "dogs.jpg");
             BufferedImage img = null;
             try {
                 img = ImageIO.read(inputImageFile);
@@ -184,6 +193,50 @@ public class webServer {
 
             return response;
         });
+
+
+        get("/test", (request, response) -> {
+
+            File imgFile = null;
+
+            imgFile = new File("./stega.png");
+
+
+            BufferedImage img = ImageIO.read(imgFile);
+
+            Steganography.printPixels(img);
+
+            return response;
+        });
+
+
+        // Retrieve an unmodified dog image
+        get("/dogs", (request, response) -> {
+
+            // Prep the HTTP response for an image file.
+            OutputStream outputStream = response.raw().getOutputStream();
+            response.raw().setContentType("image/png");
+
+            // Open the Buffered Image to allow modification of it's contents
+            File inputImageFile = new File(filepath + "dogs.jpg");
+            BufferedImage img = null;
+            try {
+                img = ImageIO.read(inputImageFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Write the image back to the HTTP response
+            try {
+                ImageIO.write(img, "png", outputStream);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return response;
+
+        });
+
 
         return true;
     }

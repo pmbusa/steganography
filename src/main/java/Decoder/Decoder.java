@@ -36,7 +36,11 @@ public class Decoder {
 
             String hiddenIP = Steganography.retrieveIP(img);
 
-            System.out.println("\nThe hidden ip is: " + hiddenIP);
+            if (hiddenIP.length() == 0) {
+                System.out.println("\nNo hidden IP was found in this image");
+            }else {
+                System.out.println("\nThe hidden IP is: " + hiddenIP);
+            }
 
         }
     }

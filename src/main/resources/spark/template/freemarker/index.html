@@ -9,25 +9,25 @@
     </head>
     <body>
         <div class="title">
-            Welcome to my page!
+            Welcome to my steganography demo page!
             <br />
             <br />
         </div>
         <div class="body">
-            Everything on here is private information. Do not share anything, I'll know who did it.<br /><br />
+            <p>
+                This is an instructional page to showcase the steganography library I created for my computer networks class.<br /><br />
+                You should see two images below. The first one is the original and the second has your computers IP address encoded into it. 
+                If you can't see the difference, then it's working! Go ahead and save the image then run it through the decoder. 
+                It should spit out the IP from the computer which originally requested the picture.<br />
+            </p>
         </div>
         <div class="body">
-            So, here we are. Isn't this website ${adjective}?!<br />
-            Check out this picture of a dog I found on the internet!<br />
+            <p>
+                <img src=${dogs} alt="The dog should be here, unmodified..." /> <br /><br />
 
-            <img src=${dog} alt="The dog should be here" /> <br /><br />
-
-            How about the Master Chief?<br />
-            <img src=${mc} alt="The Master Chief should be here..." />
-
-            <br /><br />here he is with a better thing to do the image coding<br />
-            <img src="http://localhost:4567/picture.png" />
-
+                Here is the modified image:<br />
+                <img src="./stega" alt="The modified image should be right here..." />
+            </p>
 
         </div>
     </body>

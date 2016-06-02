@@ -3,6 +3,9 @@ package Server;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.Random;
 
 /**
@@ -32,11 +35,9 @@ public class Steganography {
         // resources needed to work with pixels
         ColorModel cm = img.getColorModel();
         Random rand = new Random();
-        int pixel = img.getRGB(x, y);
-
+        //int pixel = img.getRGB(x, y);
 
         Color col = new Color(img.getRGB(x, y), cm.hasAlpha());
-
 
         // pull the original data values of the pixel
 
@@ -72,6 +73,9 @@ public class Steganography {
     }
 
     /**
+     * This function stores one integer of data in the range of 0 to 16 in one pixel of an image. The supplied
+     * PixelCoordinate object is also advanced to the next position.
+     *
      * @param img   The buffered image to modify
      * @param coord A PixelCoordinate object used to keep track of the current location
      * @param data  The integer you wish to store
@@ -81,52 +85,56 @@ public class Steganography {
         coord.nextPixel();
     }
 
+
     /**
      * This function sets the entry point for the hidden data. A decoder searches for this pattern and when it is
      * found, the resulting secret content can be revealed.
      *
-     * @param img The buffered image to modify
+     * @param img   The buffered image to modify
+     * @param coord A PixelCoordinate object used to keep track of the current location
      */
-    public static void setHeader(BufferedImage img) {
+    public static void setHeader(BufferedImage img, PixelCoordinate coord) {
 
         // Set the first five pixels to a value of 11
         for (int i = 0; i < 5; i++) {
-            setPixel(img, i, 0, 11);
+            setPixel(img, coord, 11);
+
         }
 
         // Set the next five pixels to a value of 12
         for (int i = 5; i < 10; i++) {
-            setPixel(img, i, 0, 12);
+            setPixel(img, coord, 12);
         }
     }
 
     /**
-     * This function sets the termination pattern of the hidden data. Currently it is unused due to only one type
+     * * This function sets the termination pattern of the hidden data. Currently it is unused due to only one type
      * of information able to be encoded, an IPv4 address. I think it works though
      *
-     * @param img    The buffered image to modify
-     * @param xStart The X-coordinate of where to begin the delimination pattern
-     * @param yStart The Y-coordinate of where to begin the delimination pattern
-     * @return This is unused at the moment.
+     * @param img   The buffered image to modify
+     * @param coord A PixelCoordinate object used to keep track of the current location
+     * @return Returns true for successfully setting the delimiter and false for a failed attempt
      */
-    public static boolean setDelimiter(BufferedImage img, int xStart, int yStart) {
-        int x = xStart;
-        int y = yStart;
+    public static boolean setDelimiter(BufferedImage img, PixelCoordinate coord) {
         int maxWidth = img.getWidth();
         int maxHeight = img.getHeight();
+        int pixelCount = maxHeight * maxWidth;
+
+
+        // Verify that we're in bounds for the delimiter
+        // This isn't really needed in this new versio but it has future applications
+        int remainingPixels = pixelCount - (maxWidth * coord.y) - coord.x;
+        if (pixelCount - remainingPixels > 5) {
+
+            return false;
+        }
+
 
         // set the next five pixels to 13 to signify the end of the hidden data
         for (int i = 0; i < 5; i++) {
-            // Verify that we're in bounds for the delimiter
-            if (x >= maxHeight) {
-                x = 0;
-                y++;
-            }
-            if (y >= maxWidth) {
-                return false;
-            }
 
-            setPixel(img, x, y, 13);
+            System.out.println("Set pixel (" + coord.x + "," + coord.y + ") to value 13");
+            setPixel(img, coord, 13);
         }
         return true;
     }
@@ -135,12 +143,15 @@ public class Steganography {
      * This is a wrapper function for the more explicit form of setDelimiter(). It allows for the use of a
      * PixelCoordinate object to streamline implementation
      *
-     * @param img   The buffered image to modify
-     * @param coord A PixelCoordinate object used to keep track of the current location
+     * @param img    The buffered image to modify
+     * @param xStart The X-coordinate of where to begin the delimination pattern
+     * @param yStart The Y-coordinate of where to begin the delimination pattern
      * @return This is unused at the moment.
      */
-    public static boolean setDelimiter(BufferedImage img, PixelCoordinate coord) {
-        return setDelimiter(img, coord.x, coord.y);
+    public static boolean setDelimiter(BufferedImage img, int xStart, int yStart) {
+        PixelCoordinate coord = new PixelCoordinate(img, xStart, yStart);
+
+        return setDelimiter(img, coord);
     }
 
     /**
@@ -172,12 +183,33 @@ public class Steganography {
 
         // Encode the IP into the image in a random location.
         Random rand = new Random();
-        int x = 10;
-        int y = 0;
+
+
+        int x;
+        int y;
+        int pixelCount = img.getHeight() * img.getWidth();
+
+        while (true) {
+            x = rand.nextInt(img.getWidth());
+            y = rand.nextInt(img.getHeight());
+
+            // Exit on: total pixel count has enough space from start to end so it doesn't overflow
+
+            System.out.println("x: " + x + ", y: " + y);
+
+            int remainingPixels = pixelCount - (y * img.getWidth()) - x;
+
+            if (remainingPixels > 30) {
+                break;
+            }
+
+
+        }
+
         PixelCoordinate coord = new PixelCoordinate(img, x, y);
 
         // set the header.
-        setHeader(img);
+        setHeader(img, coord);
 
         // Set the ip address into the pixels
         for (int i = 0; i < 4; i++) {
@@ -193,7 +225,9 @@ public class Steganography {
 
 
         // Set the delimiter
-        //setDelimiter(img, coord);
+        if (setDelimiter(img, coord)) {
+            System.out.println("Set the delimteterererer");
+        }
 
         return true;
     }
@@ -251,7 +285,13 @@ public class Steganography {
                 coord.y = tmpCoord.y;
                 break;
             } else {
-                coord.nextPixel();
+
+                try {
+                    coord.nextPixel();
+                }
+                catch (IndexOutOfBoundsException e) {
+                    return "";
+                }
             }
         }
 
@@ -311,8 +351,8 @@ public class Steganography {
 
         // resources needed to work with pixels
         ColorModel cm = img.getColorModel();
-        int pixel = img.getRGB(xCoord, yCoord);
 
+        int pixel = img.getRGB(xCoord, yCoord);
         Color col = new Color(img.getRGB(xCoord, yCoord), cm.hasAlpha());
 
         // pull the original data values of the pixel
@@ -339,9 +379,39 @@ public class Steganography {
      * @return The integer data stored within the specified pixel
      */
     public static int getPixelData(BufferedImage img, PixelCoordinate coord) {
+        if (!coord.inBounds()) {
+            return -1;
+        }
         return getPixelData(img, coord.x, coord.y);
     }
 
+
+    public static void printPixels(BufferedImage img) {
+        int height = img.getHeight();
+        int width = img.getWidth();
+        int size = height * width;
+
+        File outFile = new File("./pixeldata.txt");
+        PrintStream ps = null;
+        try {
+            ps = new PrintStream(outFile);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        for (int y = 0; y < height; y++) {
+            int offset = y * width;
+            for (int x = 0; x < width; x++) {
+                int data = getPixelData(img, x, y);
+                int pixelNum = offset + x;
+
+                ps.printf("Pixel %3d == %2d%n", pixelNum, data);
+            }
+        }
+
+        ps.close();
+
+    }
 }
 
 
@@ -395,12 +465,13 @@ class PixelCoordinate {
      * @return
      */
     public boolean nextPixel() {
-        //System.out.print("X: " + Integer.toString(x) + ", Y: " + Integer.toString(y) + ", advancing to ");
-        if (x >= width) {
+        //System.out.println("X: " + Integer.toString(x) + ", Y: " + Integer.toString(y) + ", advancing to ");
+        if (x >= width - 1) {
             x = 0;
             y++;
-        } else if (y >= height) {
-            throw new IndexOutOfBoundsException("Coordinates went off the image");
+            if (y >= height) {
+                throw new IndexOutOfBoundsException("Coordinates went off the image");
+            }
         } else {
             x++;
         }
@@ -414,7 +485,9 @@ class PixelCoordinate {
      * @return
      */
     public boolean inBounds() {
-        if (height <= y) return false;
+        if (height < y) return false;
+        if (width < x) return false;
         return true;
     }
+
 }
