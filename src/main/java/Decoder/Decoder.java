@@ -31,7 +31,9 @@ public class Decoder {
             try {
                 img = ImageIO.read(imageFile);
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("Error: file not found.\n");
+                continue;
+                //e.printStackTrace();
             }
 
             String hiddenIP = Steganography.retrieveIP(img);

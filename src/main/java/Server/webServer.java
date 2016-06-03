@@ -1,9 +1,12 @@
 package Server;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import javax.imageio.ImageIO;
 
@@ -11,6 +14,8 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import static spark.Spark.*;
 
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.resource.Resource;
 import spark.ModelAndView;
 import spark.Response;
 import spark.template.freemarker.FreeMarkerEngine;
@@ -19,7 +24,7 @@ import spark.template.freemarker.FreeMarkerEngine;
  * This contains all of the functions necessary for running the webserver. It also specifies all of the pages that
  * can be accessed. The default port is 4567. Save both the images from the index page to the same folder as the
  * decoder .jar file and run it. Both images will be in png format and require the full file name.
- *
+ * <p>
  * Sites to look at:
  * <p>
  * 127.0.0.1:4567/index     This is the main page with both an unmodified and modified image. Start here.
@@ -235,6 +240,31 @@ public class webServer {
 
             return response;
 
+        });
+
+
+        // The route distributes the decoder to the user
+        get("/decoder.jar", (request, response) -> {
+
+            File dec = new File("./decoder.jar");
+
+            /*
+            ResourceHandler rh = new ResourceHandler();
+            Resource decoder = rh.getResource("./decoder.jar");
+            response.raw().setContentType("application/jar");
+            */
+
+
+            response.type("application/jar");
+
+            BufferedOutputStream buffOut = new BufferedOutputStream(response.raw().getOutputStream());
+
+            byte[] byteArr = Files.readAllBytes(dec.toPath());
+            buffOut.write(byteArr);
+            buffOut.flush();
+            buffOut.close();
+
+            return response;
         });
 
 

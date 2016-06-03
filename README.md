@@ -1,1 +1,8 @@
-# steganography
+steganography: the practice of concealing messages or information within other nonsecret text or data. 
+
+This proof-of-concept project uses the Spark framework to run a webserver which hosts a simple, dynamic website. During the page generation, the IP address of the client is pulled from the HTTP request and encoded into the image. Commonly used by spies, Steganography is the art of hiding something in plain sight. This sort of image post-processing doesn’t look any different from the source material but under the right light, reveals far more than at first glance
+
+A pixel is most easily represented as a 3-tuple of the red, green and blue light values in the range of 0-255; this is the range of a 2-digit hexadecimal number. By modifying the least significant digit of the color value for each pixel, a message can be hidden in the image without too much visible. The clients IP address is stored in this image and can be retrieved at a later time using a decoder. The placement of the hidden IP is different on each generation, enhancing the effect of the hidden message looking like electronic noise
+
+The inspiration for this project came from a real world need of mine. I was part of an organization whose main means of communication was through Groupme. confidential things were discussed in the chatroom and at some point we had an issue where a member was leaking information to people who weren’t supposed to have it. The problem at hand was finding out who did it; since nobody would admit to it, we planned to set a trap. However, the truth came out and we never had to use it which is nice since this project is pretty North Korea-esque…
+
